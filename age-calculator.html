@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Age Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Tiro+Devanagari+Sanskrit&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #c0392b;
+    --gold: #d4a017;
+    --deep: #1a0a00;
+    --warm: #2d1600;
+    --parchment: #f5ead5;
+    --light-parchment: #fdf6e8;
+    --accent: #e8720c;
+    --text-dark: #1a0a00;
+    --text-muted: #7a5c3a;
+    --border: #c9a96e;
+    --shadow: rgba(26,10,0,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--deep);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1rem;
+    position: relative; overflow-x: hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(192,57,43,0.13) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(212,160,23,0.10) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(201,169,110,0.04) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(201,169,110,0.04) 40px);
+    pointer-events:none; z-index:0;
+  }
+  .mandala-bg {
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:700px; height:700px;
+    opacity:0.04; pointer-events:none; z-index:0;
+  }
+  .container { position:relative; z-index:1; width:100%; max-width:560px; }
+  .card {
+    background:var(--light-parchment);
+    border-radius:4px; border:1.5px solid var(--border);
+    box-shadow:0 8px 60px var(--shadow), 0 2px 8px rgba(0,0,0,0.3);
+    overflow:hidden;
+  }
+
+  .header {
+    background:var(--warm); padding:2rem 2rem 1.5rem;
+    text-align:center; border-bottom:2px solid var(--gold); position:relative;
+  }
+  .header::after {
+    content:''; position:absolute; bottom:-6px; left:50%;
+    transform:translateX(-50%);
+    width:40px; height:10px; background:var(--gold);
+    clip-path:polygon(50% 100%,0 0,100% 0);
+  }
+  .om { font-size:2rem; color:var(--gold); display:block; margin-bottom:0.3rem;
+    font-family:'Tiro Devanagari Sanskrit',serif;
+    text-shadow:0 0 20px rgba(212,160,23,0.5);
+    animation:pulse 3s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { opacity:.85; text-shadow:0 0 20px rgba(212,160,23,.4); }
+    50%      { opacity:1;   text-shadow:0 0 35px rgba(212,160,23,.8); }
+  }
+  .hdr-title {
+    font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:900;
+    color:var(--parchment); letter-spacing:.04em; line-height:1;
+  }
+  .hdr-title.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:1.5rem; }
+  .hdr-sub { font-size:.7rem; color:var(--border); letter-spacing:.15em; text-transform:uppercase; margin-top:.5rem; }
+  .hdr-sub.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.85rem; letter-spacing:0; text-transform:none; }
+
+  .body { padding:2rem; }
+
+  .toggle-wrap {
+    display:flex; background:var(--parchment);
+    border:1.5px solid var(--border); border-radius:3px;
+    overflow:hidden; margin-bottom:1.8rem;
+  }
+  .tbtn {
+    flex:1; padding:.75rem; border:none; background:transparent; cursor:pointer;
+    font-family:'DM Mono',monospace; font-size:.82rem; font-weight:500;
+    color:var(--text-muted); letter-spacing:.04em; transition:all .25s;
+    display:flex; align-items:center; justify-content:center; gap:.4rem;
+  }
+  .tbtn.active { background:var(--crimson); color:#fff; }
+  .tbtn:not(.active):hover { background:rgba(192,57,43,.08); color:var(--crimson); }
+
+  .lbl { display:block; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:.5rem; font-weight:500; }
+  .lbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.85rem; letter-spacing:0; text-transform:none; }
+  .slbl { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:.4rem; }
+  .slbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.75rem; letter-spacing:0; text-transform:none; }
+
+  .date-row { display:grid; grid-template-columns:1.5fr 1.5fr 2fr; gap:.75rem; margin-bottom:1.5rem; }
+  .fg { display:flex; flex-direction:column; }
+
+  select, input[type="number"] {
+    width:100%; padding:.65rem .8rem;
+    border:1.5px solid var(--border); border-radius:3px;
+    background:#fff; font-family:'DM Mono',monospace;
+    font-size:.88rem; color:var(--text-dark);
+    appearance:none; -webkit-appearance:none; outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  select:focus, input[type="number"]:focus {
+    border-color:var(--crimson); box-shadow:0 0 0 3px rgba(192,57,43,.1);
+  }
+  select {
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a5c3a'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right .75rem center;
+    padding-right:2rem; cursor:pointer;
+  }
+  select.npf { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.9rem; }
+
+  .today-box {
+    background:var(--parchment); border:1.5px solid var(--border);
+    border-radius:3px; padding:1rem; margin-bottom:1.5rem;
+    display:flex; align-items:center; gap:.8rem;
+  }
+  .today-icon { font-size:1.2rem; flex-shrink:0; }
+  .today-lbl { font-size:.64rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text-muted); display:block; }
+  .today-lbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.8rem; letter-spacing:0; text-transform:none; }
+  .today-date { font-size:.88rem; color:var(--text-dark); font-weight:500; margin-top:.1rem; }
+  .today-date.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.92rem; }
+
+  .cbtn {
+    width:100%; padding:.9rem;
+    background:var(--crimson); color:#fff; border:none; border-radius:3px;
+    font-family:'Playfair Display',serif; font-size:1rem; font-weight:700;
+    letter-spacing:.06em; cursor:pointer; transition:all .2s;
+    position:relative; overflow:hidden;
+  }
+  .cbtn.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:1.05rem; }
+  .cbtn::before {
+    content:''; position:absolute; top:0; left:-100%;
+    width:100%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+    transition:left .4s;
+  }
+  .cbtn:hover::before { left:100%; }
+  .cbtn:hover { background:#a93226; box-shadow:0 4px 20px rgba(192,57,43,.4); }
+  .cbtn:active { transform:scale(.99); }
+
+  .errmsg {
+    background:#fff0ee; border:1px solid #e57373; border-radius:3px;
+    padding:.75rem 1rem; color:#c0392b; font-size:.82rem;
+    margin-top:1rem; text-align:center; animation:su .3s ease;
+  }
+  .errmsg.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.9rem; }
+
+  .result { margin-top:1.5rem; animation:su .4s ease; }
+  @keyframes su { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .res-header { text-align:center; padding:1rem 0 .5rem; border-top:1px solid var(--border); }
+  .res-header-txt { font-size:.65rem; text-transform:uppercase; letter-spacing:.18em; color:var(--text-muted); }
+  .res-header-txt.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.85rem; letter-spacing:0; text-transform:none; }
+
+  .age-box {
+    text-align:center; padding:1.2rem 0;
+    background:linear-gradient(135deg,var(--warm) 0%,#3d2000 100%);
+    border-radius:3px; border:1.5px solid var(--gold);
+    margin:.8rem 0; position:relative; overflow:hidden;
+  }
+  .age-box::before {
+    content:''; position:absolute; inset:2px;
+    border:1px solid rgba(212,160,23,.3); border-radius:2px; pointer-events:none;
+  }
+  .age-num {
+    font-family:'Playfair Display',serif; font-size:3.5rem; font-weight:900;
+    color:var(--gold); line-height:1; text-shadow:0 2px 15px rgba(212,160,23,.3);
+  }
+  .age-num.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:3rem; }
+  .age-lbl { font-size:.75rem; color:var(--parchment); letter-spacing:.2em; text-transform:uppercase; opacity:.8; margin-top:.2rem; }
+  .age-lbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.9rem; letter-spacing:0; text-transform:none; opacity:.9; }
+
+  .dgrid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.6rem; margin-bottom:.8rem; }
+  .dcard { background:var(--parchment); border:1px solid var(--border); border-radius:3px; padding:.8rem .5rem; text-align:center; }
+  .dnum { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--crimson); line-height:1; }
+  .dnum.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:1.4rem; }
+  .dlbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-top:.2rem; }
+  .dlbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.75rem; letter-spacing:0; text-transform:none; }
+
+  .egrid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-bottom:.8rem; }
+  .ecard { background:#fff; border:1px solid var(--border); border-radius:3px; padding:.7rem .8rem; display:flex; align-items:center; gap:.6rem; }
+  .eicon { font-size:1.1rem; flex-shrink:0; }
+  .eval { font-size:.9rem; font-weight:500; color:var(--text-dark); line-height:1.2; }
+  .eval.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.92rem; }
+  .elbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); }
+  .elbl.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.72rem; letter-spacing:0; text-transform:none; }
+
+  .bday-box {
+    background:linear-gradient(135deg,#fff8ee,var(--parchment));
+    border:1.5px solid var(--gold); border-radius:3px;
+    padding:.9rem 1rem; display:flex; align-items:center; gap:.8rem;
+  }
+  .bday-icon { font-size:1.4rem; }
+  .btitle { font-size:.65rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text-muted); }
+  .btitle.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.8rem; letter-spacing:0; text-transform:none; }
+  .bval { font-size:.92rem; color:var(--text-dark); font-weight:500; margin-top:.15rem; }
+  .bval.np { font-family:'Tiro Devanagari Sanskrit',serif; }
+  .bdays { font-size:.78rem; color:var(--accent); margin-top:.1rem; font-weight:500; }
+  .bdays.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.82rem; }
+
+  .footer { text-align:center; padding:.8rem; background:var(--parchment);
+    border-top:1px solid var(--border); font-size:.62rem; color:var(--text-muted);
+    letter-spacing:.08em; text-transform:uppercase; }
+  .footer.np { font-family:'Tiro Devanagari Sanskrit',serif; font-size:.78rem; letter-spacing:0; text-transform:none; }
+
+  .hidden { display:none !important; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
+  input[type=number] { -moz-appearance:textfield; }
+</style>
+</head>
+<body>
+
+<svg class="mandala-bg" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(350,350)" fill="none" stroke="#d4a017" stroke-width="1">
+    <circle r="80"/><circle r="140"/><circle r="200"/><circle r="260"/><circle r="320"/>
+    <g id="pt"><ellipse cx="0" cy="-170" rx="18" ry="50"/><ellipse cx="0" cy="-230" rx="12" ry="35"/></g>
+    <use href="#pt" transform="rotate(30)"/><use href="#pt" transform="rotate(60)"/>
+    <use href="#pt" transform="rotate(90)"/><use href="#pt" transform="rotate(120)"/>
+    <use href="#pt" transform="rotate(150)"/><use href="#pt" transform="rotate(180)"/>
+    <use href="#pt" transform="rotate(210)"/><use href="#pt" transform="rotate(240)"/>
+    <use href="#pt" transform="rotate(270)"/><use href="#pt" transform="rotate(300)"/>
+    <use href="#pt" transform="rotate(330)"/>
+  </g>
+</svg>
+
+<div class="container">
+<div class="card">
+
+  <div class="header">
+    <span class="om">ॐ</span>
+    <div class="hdr-title" id="hdr-title">Age Calculator</div>
+    <div class="hdr-sub"  id="hdr-sub">English (AD) Calendar</div>
+  </div>
+
+  <div class="body">
+
+    <div class="toggle-wrap">
+      <button type="button" class="tbtn active" id="btn-en" onclick="switchLang('EN')"> English (AD)</button>
+      <button type="button" class="tbtn" id="btn-np" onclick="switchLang('NP')"> नेपाली (BS)</button>
+    </div>
+
+    <div id="form-en">
+      <label class="lbl">Date of Birth</label>
+      <div class="date-row">
+        <div class="fg"><span class="slbl">Day</span><select id="ad-day"></select></div>
+        <div class="fg"><span class="slbl">Month</span><select id="ad-month"></select></div>
+        <div class="fg"><span class="slbl">Year</span><input type="number" id="ad-year" placeholder="e.g. 1995" min="1" max="9999"></div>
+      </div>
+      <div class="today-box">
+        <div class="today-icon">📅</div>
+        <div>
+          <span class="today-lbl">Today's Date</span>
+          <div class="today-date" id="today-en">—</div>
+        </div>
+      </div>
+      <button type="button" class="cbtn" onclick="calculate()"> Calculate Age </button>
+    </div>
+
+    <div id="form-np" class="hidden">
+      <label class="lbl np">जन्म मिति</label>
+      <div class="date-row">
+        <div class="fg"><span class="slbl np">गते</span><select id="bs-day" class="npf"></select></div>
+        <div class="fg"><span class="slbl np">महिना</span><select id="bs-month" class="npf"></select></div>
+        <div class="fg"><span class="slbl np">साल</span><input type="number" id="bs-year" placeholder="जस्तै २०५२" min="1" max="9999"></div>
+      </div>
+      <div class="today-box">
+        <div class="today-icon">📅</div>
+        <div>
+          <span class="today-lbl np">आजको मिति</span>
+          <div class="today-date np" id="today-np">—</div>
+        </div>
+      </div>
+      <button type="button" class="cbtn np" onclick="calculate()"> उमेर गणना गर्नुहोस् </button>
+    </div>
+
+    <div id="errmsg" class="errmsg hidden"></div>
+
+    <div id="res-en" class="result hidden">
+      <div class="res-header"><span class="res-header-txt"> Your Age </span></div>
+      <div class="age-box">
+        <div class="age-num" id="en-yrs">—</div>
+        <div class="age-lbl">Years Old</div>
+      </div>
+      <div class="dgrid">
+        <div class="dcard"><div class="dnum" id="en-y">—</div><div class="dlbl">Years</div></div>
+        <div class="dcard"><div class="dnum" id="en-m">—</div><div class="dlbl">Months</div></div>
+        <div class="dcard"><div class="dnum" id="en-d">—</div><div class="dlbl">Days</div></div>
+      </div>
+      <div class="egrid">
+        <div class="ecard"><div class="eicon">📆</div><div><div class="eval" id="en-tdays">—</div><div class="elbl">Total Days</div></div></div>
+        <div class="ecard"><div class="eicon">🔢</div><div><div class="eval" id="en-tweeks">—</div><div class="elbl">Total Weeks</div></div></div>
+      </div>
+      <div class="egrid">
+        <div class="ecard"><div class="eicon">⏰</div><div><div class="eval" id="en-thours">—</div><div class="elbl">Total Hours</div></div></div>
+        <div class="ecard"><div class="eicon">📅</div><div><div class="eval" id="en-wday">—</div><div class="elbl">Birth Weekday</div></div></div>
+      </div>
+      <div class="bday-box">
+        <div class="bday-icon">🎂</div>
+        <div>
+          <div class="btitle">Next Birthday</div>
+          <div class="bval" id="en-nbday">—</div>
+          <div class="bdays" id="en-ndays">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="res-np" class="result hidden">
+      <div class="res-header"><span class="res-header-txt np"> तपाईंको उमेर </span></div>
+      <div class="age-box">
+        <div class="age-num np" id="np-yrs">—</div>
+        <div class="age-lbl np">वर्ष पुग्यो</div>
+      </div>
+      <div class="dgrid">
+        <div class="dcard"><div class="dnum np" id="np-y">—</div><div class="dlbl np">वर्ष</div></div>
+        <div class="dcard"><div class="dnum np" id="np-m">—</div><div class="dlbl np">महिना</div></div>
+        <div class="dcard"><div class="dnum np" id="np-d">—</div><div class="dlbl np">दिन</div></div>
+      </div>
+      <div class="egrid">
+        <div class="ecard"><div class="eicon">📆</div><div><div class="eval np" id="np-tdays">—</div><div class="elbl np">जम्मा दिनहरू</div></div></div>
+        <div class="ecard"><div class="eicon">🔢</div><div><div class="eval np" id="np-tweeks">—</div><div class="elbl np">जम्मा हप्ताहरू</div></div></div>
+      </div>
+      <div class="egrid">
+        <div class="ecard"><div class="eicon">⏰</div><div><div class="eval np" id="np-thours">—</div><div class="elbl np">जम्मा घन्टाहरू</div></div></div>
+        <div class="ecard"><div class="eicon">📅</div><div><div class="eval np" id="np-wday">—</div><div class="elbl np">जन्म वार</div></div></div>
+      </div>
+      <div class="bday-box">
+        <div class="bday-icon">🎂</div>
+        <div>
+          <div class="btitle np">अर्को जन्मदिन</div>
+          <div class="bval np" id="np-nbday">—</div>
+          <div class="bdays np" id="np-ndays">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer" id="footer">English (AD) &amp; Nepali (BS) Calendar Support</div>
+</div>
+</div>
+
+<script>
+const bsData = {
+  2000:[30,32,31,32,31,30,30,30,29,30,29,31],2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2002:[31,31,32,32,31,30,30,29,30,29,30,30],2003:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2004:[30,32,31,32,31,30,30,30,29,30,29,31],2005:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2006:[31,31,32,32,31,30,30,29,30,29,30,30],2007:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2008:[31,31,31,32,31,31,29,30,30,29,29,31],2009:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2010:[31,31,32,32,31,30,30,29,30,29,30,30],2011:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2012:[31,31,31,32,31,31,29,30,30,29,30,30],2013:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2014:[31,31,32,32,31,30,30,29,30,29,30,30],2015:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2016:[31,31,31,32,31,31,29,30,30,29,30,30],2017:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2018:[31,32,31,32,31,30,30,29,30,29,30,30],2019:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2020:[31,31,31,32,31,31,29,30,30,29,30,30],2021:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2022:[31,32,31,32,31,30,30,30,29,29,30,30],2023:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2024:[30,32,31,32,31,30,30,30,29,30,29,31],2025:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2026:[31,31,32,32,31,30,30,29,30,29,30,30],2027:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2028:[30,32,31,32,31,30,30,30,29,30,29,31],2029:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2030:[31,31,32,32,31,30,30,29,30,29,30,30],2031:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2032:[30,32,31,32,31,30,30,30,29,30,29,31],2033:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2034:[31,31,32,32,31,30,30,29,30,29,30,30],2035:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2036:[31,31,31,32,31,31,29,30,30,29,30,30],2037:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2038:[31,31,32,32,31,30,30,29,30,29,30,30],2039:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2040:[31,31,31,32,31,31,29,30,30,29,30,30],2041:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2042:[31,32,31,32,31,30,30,29,30,29,30,30],2043:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2044:[31,31,31,32,31,31,29,30,30,29,30,30],2045:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2046:[31,32,31,32,31,30,30,30,29,29,30,30],2047:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2048:[30,32,31,32,31,30,30,30,29,30,29,31],2049:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2050:[31,31,32,32,31,30,30,29,30,29,30,30],2051:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2052:[31,31,31,32,31,31,29,30,30,29,30,30],2053:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2054:[31,31,32,32,31,30,30,29,30,29,30,30],2055:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2056:[31,31,31,32,31,31,29,30,30,29,30,30],2057:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2058:[31,31,32,32,31,30,30,29,30,29,30,30],2059:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2060:[31,31,31,32,31,31,29,30,30,29,30,30],2061:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2062:[31,32,31,32,31,30,30,29,30,29,30,30],2063:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2064:[31,31,31,32,31,31,29,30,30,29,30,30],2065:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2066:[31,31,32,32,31,30,30,29,30,29,30,30],2067:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2068:[31,31,31,32,31,31,29,30,30,29,30,30],2069:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2070:[31,31,32,32,31,30,30,29,30,29,30,30],2071:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2072:[31,31,31,32,31,31,29,30,30,29,30,30],2073:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2074:[31,31,32,32,31,30,30,29,30,29,30,30],2075:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2076:[30,32,31,32,31,30,30,30,29,30,29,31],2077:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2078:[31,31,32,32,31,30,30,29,30,29,30,30],2079:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2080:[31,31,31,32,31,31,29,30,30,29,30,30],2081:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2082:[31,31,32,32,31,30,30,29,30,29,30,30],
+};
+
+const BS_START = 2000;
+const AD_REF   = new Date(1943, 3, 14); // 2000-01-01 BS
+const BS_CYCLE_YEARS = [2000, 2001, 2002, 2003]; // fallback cycle
+const TIME_API = "https://worldtimeapi.org/api/timezone/Asia/Kathmandu";
+
+const npMonths = ['बैशाख','जेठ','असार','श्रावण','भाद्र','आश्विन','कार्तिक','मंसिर','पुष','माघ','फाल्गुन','चैत्र'];
+const adMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const wdays    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const wdaysNp  = ['आइतबार','सोमबार','मंगलबार','बुधबार','बिहिबार','शुक्रबार','शनिबार'];
+const npD      = ['०','१','२','३','४','५','६','७','८','९'];
+
+let lang = 'EN';
+let NOW = new Date();
+
+function el(id){ return document.getElementById(id); }
+function toNp(n){ return String(n).replace(/\d/g, d => npD[d]); }
+function fmtEn(n){ return Number(n).toLocaleString('en'); }
+function fmtNp(n){ return toNp(Number(n).toLocaleString('en')); }
+function atMidnight(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function mod(n,m){ return ((n % m) + m) % m; }
+
+async function syncNowFromApi(){
+  try{
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(TIME_API, { signal: controller.signal, cache: "no-store" });
+    clearTimeout(t);
+    if(!res.ok) throw new Error("time api fail");
+    const data = await res.json();
+    NOW = data?.datetime ? new Date(data.datetime) : new Date();
+  }catch{
+    NOW = new Date();
+  }
+}
+
+function getBsMonths(y){
+  if (bsData[y]) return bsData[y];
+  const years = [2000, 2001, 2002, 2003];
+  return bsData[years[mod(y - BS_START, years.length)]];
+}
+
+function getBsMonthDays(y,m){
+  const arr = getBsMonths(y);
+  return (arr && m>=1 && m<=12) ? arr[m-1] : null;
+}
+
+function daysInBsYear(y){
+  let total = 0;
+  for(let m=1;m<=12;m++) total += getBsMonthDays(y,m);
+  return total;
+}
+
+function bsToAd(y,m,d){
+  if(!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null;
+  const md = getBsMonthDays(y,m);
+  if(!md || d<1 || d>md) return null;
+
+  let days = 0;
+  if (y >= BS_START){
+    for(let yr=BS_START; yr<y; yr++) days += daysInBsYear(yr);
+  } else {
+    for(let yr=y; yr<BS_START; yr++) days -= daysInBsYear(yr);
+  }
+  for(let i=1;i<m;i++) days += getBsMonthDays(y,i);
+  days += (d - 1);
+
+  const r = new Date(AD_REF);
+  r.setDate(r.getDate() + days);
+  return r;
+}
+
+function adToBs(ad){
+  let diff = Math.floor((atMidnight(ad) - atMidnight(AD_REF)) / 86400000);
+  let y = BS_START;
+
+  if (diff >= 0){
+    while (diff >= daysInBsYear(y)){
+      diff -= daysInBsYear(y);
+      y++;
+    }
+  } else {
+    while (diff < 0){
+      y--;
+      diff += daysInBsYear(y);
+    }
+  }
+
+  let m = 1;
+  while (m <= 12){
+    const md = getBsMonthDays(y,m);
+    if (diff < md) break;
+    diff -= md;
+    m++;
+  }
+  return { y, m, d: diff + 1 };
+}
+
+function fillDays(id,max,np){
+  const s = el(id);
+  const cur = s.value;
+  s.innerHTML = `<option value="">${np ? 'गते' : 'Day'}</option>`;
+  for(let i=1;i<=max;i++){
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = np ? toNp(i) : i;
+    s.appendChild(o);
+  }
+  if(cur && +cur <= max) s.value = cur;
+}
+
+function setupAD(){
+  const ms = el('ad-month');
+  const ys = el('ad-year');
+
+  ms.innerHTML = '<option value="">Month</option>';
+  adMonths.forEach((m,i)=>{
+    const o = document.createElement('option');
+    o.value = i+1;
+    o.textContent = m;
+    ms.appendChild(o);
+  });
+
+  const refresh = ()=>{
+    const m = +ms.value;
+    const y = +ys.value || NOW.getFullYear();
+    fillDays('ad-day', m ? new Date(y, m, 0).getDate() : 31, false);
+  };
+
+  fillDays('ad-day', 31, false);
+  ms.addEventListener('change', refresh);
+  ys.addEventListener('input', refresh);
+  ys.addEventListener('change', refresh);
+  refresh();
+}
+
+function setupBS(){
+  const ms = el('bs-month');
+  const ys = el('bs-year');
+
+  ms.innerHTML = '<option value="">महिना</option>';
+  npMonths.forEach((m,i)=>{
+    const o = document.createElement('option');
+    o.value = i+1;
+    o.textContent = `${toNp(i+1)}. ${m}`;
+    ms.appendChild(o);
+  });
+
+  const refresh = ()=>{
+    const m = +ms.value;
+    const y = +ys.value || adToBs(NOW).y;
+    fillDays('bs-day', m ? getBsMonthDays(y,m) : 32, true);
+  };
+
+  fillDays('bs-day', 32, true);
+  ms.addEventListener('change', refresh);
+  ys.addEventListener('input', refresh);
+  ys.addEventListener('change', refresh);
+  refresh();
+}
+
+function showToday(){
+  const t = new Date(NOW);
+  el('today-en').textContent = t.toLocaleDateString('en-US',{
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+
+  const bs = adToBs(t);
+  el('today-np').textContent = `${npMonths[bs.m-1]} ${toNp(bs.d)}, ${toNp(bs.y)} (बि.सं.)`;
+}
+
+function switchLang(l){
+  lang = l;
+  const np = l === 'NP';
+
+  el('form-en').classList.toggle('hidden', np);
+  el('form-np').classList.toggle('hidden', !np);
+  el('btn-en').classList.toggle('active', !np);
+  el('btn-np').classList.toggle('active', np);
+
+  el('hdr-title').textContent = np ? 'उमेर क्यालकुलेटर' : 'Age Calculator';
+  el('hdr-title').className = np ? 'hdr-title np' : 'hdr-title';
+  el('hdr-sub').textContent = np ? 'नेपाली (BS) पात्रो' : 'English (AD) Calendar';
+  el('hdr-sub').className = np ? 'hdr-sub np' : 'hdr-sub';
+  el('footer').textContent = np ? 'बिक्रम संवत (BS) पात्रो — नेपाली उमेर गणना' : 'English (AD) & Nepali (BS) Calendar Support';
+  el('footer').className = np ? 'footer np' : 'footer';
+
+  el('res-en').classList.add('hidden');
+  el('res-np').classList.add('hidden');
+  el('errmsg').classList.add('hidden');
+}
+
+function err(msg,np){
+  const e = el('errmsg');
+  e.textContent = msg;
+  e.className = np ? 'errmsg np' : 'errmsg';
+  e.classList.remove('hidden');
+}
+
+function isValidAdDate(y,m,d){
+  if(!Number.isInteger(y)||!Number.isInteger(m)||!Number.isInteger(d)) return false;
+  if(y<1||y>9999||m<1||m>12||d<1||d>31) return false;
+  const dt = new Date(y,m-1,d);
+  return dt.getFullYear()===y && dt.getMonth()===(m-1) && dt.getDate()===d;
+}
+
+function safeBirthdayDate(year, month, date){
+  const c = new Date(year, month, date);
+  if(month===1 && date===29 && c.getMonth()!==1) return new Date(year,1,28);
+  return c;
+}
+
+function compareBsDates(a, b){
+  if (a.y !== b.y) return a.y - b.y;
+  if (a.m !== b.m) return a.m - b.m;
+  return a.d - b.d;
+}
+
+function getBsMonthLength(y, m){
+  const md = getBsMonthDays(y, m);
+  return Number.isInteger(md) ? md : 30;
+}
+
+function calculateBsAgeParts(birth, today){
+  let yy = today.y - birth.y;
+  let mm = today.m - birth.m;
+  let dd = today.d - birth.d;
+
+  if (dd < 0){
+    mm -= 1;
+    const prevMonth = today.m - 1;
+    const prevYear = prevMonth < 1 ? today.y - 1 : today.y;
+    const fixedMonth = prevMonth < 1 ? 12 : prevMonth;
+    dd += getBsMonthLength(prevYear, fixedMonth);
+  }
+
+  if (mm < 0){
+    yy -= 1;
+    mm += 12;
+  }
+
+  return { yy, mm, dd };
+}
+
+function addBsYears(birth, yearsToAdd){
+  return { y: birth.y + yearsToAdd, m: birth.m, d: birth.d };
+}
+
+function getBsNextBirthday(birth, today){
+  let next = addBsYears(birth, today.y - birth.y);
+  if (compareBsDates(next, today) < 0){
+    next = addBsYears(birth, today.y - birth.y + 1);
+  }
+  return next;
+}
+
+function countBsDaysFromBirth(birth, today){
+  // BS calendar day count, month-length aware
+  let count = 0;
+  let cur = { ...birth };
+
+  while (compareBsDates(cur, today) < 0) {
+    const md = getBsMonthLength(cur.y, cur.m);
+    if (cur.d < md) {
+      cur.d += 1;
+    } else {
+      cur.d = 1;
+      if (cur.m < 12) cur.m += 1;
+      else { cur.m = 1; cur.y += 1; }
+    }
+    count += 1;
+  }
+  return count;
+}
+
+function bsDateToText(bs){
+  return `${npMonths[bs.m - 1]} ${toNp(bs.d)}, ${toNp(bs.y)} (बि.सं.)`;
+}
+
+function compute(birth, np, bsBirthInput = null){
+  const today = atMidnight(NOW);
+  birth = atMidnight(birth);
+
+  let yy = today.getFullYear() - birth.getFullYear();
+  let mm = today.getMonth() - birth.getMonth();
+  let dd = today.getDate() - birth.getDate();
+
+  if(dd < 0){
+    mm--;
+    dd += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+  }
+  if(mm < 0){
+    yy--;
+    mm += 12;
+  }
+
+  const tDays = Math.floor((today - birth) / 86400000);
+  const tWeeks = Math.floor(tDays / 7);
+  const tHours = tDays * 24;
+  const wdi = birth.getDay();
+
+  let nxt = safeBirthdayDate(today.getFullYear(), birth.getMonth(), birth.getDate());
+  if(nxt < today) nxt = safeBirthdayDate(today.getFullYear()+1, birth.getMonth(), birth.getDate());
+  const dtn = Math.floor((atMidnight(nxt) - today) / 86400000);
+
+  if(!np){
+    el('en-yrs').textContent = yy;
+    el('en-y').textContent = yy;
+    el('en-m').textContent = mm;
+    el('en-d').textContent = dd;
+    el('en-tdays').textContent = fmtEn(tDays);
+    el('en-tweeks').textContent = fmtEn(tWeeks);
+    el('en-thours').textContent = fmtEn(tHours);
+    el('en-wday').textContent = wdays[wdi];
+    el('en-nbday').textContent = nxt.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    el('en-ndays').textContent = dtn===0 ? '🎉 Happy Birthday today!' : `${fmtEn(dtn)} day${dtn>1?'s':''} to go`;
+    el('res-en').classList.remove('hidden');
+  } else {
+    const bsBirth = bsBirthInput || adToBs(birth);
+    const bsToday = adToBs(today);
+    const age = calculateBsAgeParts(bsBirth, bsToday);
+    const nextBs = getBsNextBirthday(bsBirth, bsToday);
+    const totalBsDays = countBsDaysFromBirth(bsBirth, bsToday);
+
+    el('np-yrs').textContent = toNp(age.yy);
+    el('np-y').textContent = toNp(age.yy);
+    el('np-m').textContent = toNp(age.mm);
+    el('np-d').textContent = toNp(age.dd);
+    el('np-tdays').textContent = fmtNp(totalBsDays);
+    el('np-tweeks').textContent = fmtNp(Math.floor(totalBsDays / 7));
+    el('np-thours').textContent = fmtNp(totalBsDays * 24);
+    el('np-wday').textContent = wdaysNp[wdi];
+    el('np-nbday').textContent = bsDateToText(nextBs);
+    el('np-ndays').textContent = compareBsDates(nextBs, bsToday) === 0
+      ? '🎉 आज जन्मदिनको शुभकामना!'
+      : `${toNp(countBsDaysFromBirth(bsToday, nextBs))} दिन बाँकी छ`;
+    el('res-np').classList.remove('hidden');
+  }
+}
+
+async function calculate(){
+  el('res-en').classList.add('hidden');
+  el('res-np').classList.add('hidden');
+  el('errmsg').classList.add('hidden');
+
+  await syncNowFromApi();
+  showToday();
+
+  const np = lang === 'NP';
+  const today = atMidnight(NOW);
+  let birth;
+
+  if(!np){
+    const y = +el('ad-year').value;
+    const m = +el('ad-month').value;
+    const d = +el('ad-day').value;
+
+    if(!y || !m || !d){ err('Please fill all fields.', false); return; }
+    if(!isValidAdDate(y,m,d)){ err('Invalid date.', false); return; }
+
+    birth = atMidnight(new Date(y,m-1,d));
+    if(birth > today){ err('Birth date cannot be in the future!', false); return; }
+    compute(birth, false);
+  } else {
+    const y = +el('bs-year').value;
+    const m = +el('bs-month').value;
+    const d = +el('bs-day').value;
+
+    if(!y || !m || !d){ err('कृपया सबै फिल्डहरू भर्नुहोस्।', true); return; }
+
+    const md = getBsMonthDays(y,m);
+    if(!md){ err('महिना वा साल अमान्य छ।', true); return; }
+    if(d > md){ err(`यस महिनामा अधिकतम ${toNp(md)} गते मात्र छ।`, true); return; }
+
+    const bsBirth = { y, m, d };
+    const bsToday = adToBs(today);
+
+    if(compareBsDates(bsBirth, bsToday) > 0){
+      err('जन्म मिति भविष्यमा हुन सक्दैन!', true); return;
+    }
+
+    birth = bsToAd(y, m, d);
+    if(!birth){ err('मिति रूपान्तरण त्रुटि।', true); return; }
+
+    birth = atMidnight(birth);
+    compute(birth, true, bsBirth);
+  }
+}
+
+window.calculate = calculate;
+window.switchLang = switchLang;
+
+(async function init(){
+  setupAD();
+  setupBS();
+  await syncNowFromApi();
+  showToday();
+
+  setInterval(async ()=>{
+    await syncNowFromApi();
+    showToday();
+  }, 60000);
+})();
+</script>
+</body>
+</html>
