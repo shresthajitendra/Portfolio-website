@@ -32,8 +32,6 @@ You can view the live website here: **[https://jitendra-shrestha.com.np/?i=1]**
 
 *   `index.html` — Main landing page.
 *   `age-calculator.html` — Dedicated application page for the Age Calculator.
-*   `jitendra_cv.pdf` — Professional curriculum vitae.
-*   `*.png` — Essential design assets, including profile pictures, project icons, and mockups.
 
 ---
 
