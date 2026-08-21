@@ -7,8 +7,6 @@ You can view the live website here: **[https://jitendra-shrestha.com.np/?i=1]**
 
 ---
 
-## 📸 Preview
-![Website Preview](websiteimg.png)
 
 ---
 
