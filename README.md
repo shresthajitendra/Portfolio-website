@@ -3,7 +3,7 @@
 Welcome to my personal portfolio repository! This website serves as a digital hub to showcase my frontend development skills, academic projects, and professional background.
 
 ## 🚀 Live Demo
-You can view the live website here: **[https://jitendra-shrestha.com.np/?i=1]**
+You can view the live website here: **[https://project.jitendra-shrestha.com.np/?i=1]**
 
 ---
 
